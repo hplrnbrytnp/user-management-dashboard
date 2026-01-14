@@ -1,4 +1,5 @@
 const { readUsers, writeUsers } = require('../utils/fileHandler');
+const crypto = require('crypto');
 
 async function getAllUsers() {
   return await readUsers();
@@ -9,28 +10,47 @@ async function getUserById(id) {
   return users.find(u => u.id === id);
 }
 
-async function createUser(user) {
+async function createUser(data) {
   const users = await readUsers();
-  users.push(user);
+
+  const newUser = {
+    id: crypto.randomUUID(),
+    name: data.name,
+    username: data.username,
+    email: data.email
+  };
+
+  users.push(newUser);
   await writeUsers(users);
-  return user;
+
+  return newUser;
 }
 
 async function updateUser(id, data) {
-  const users = await readUsers();
-  const index = users.findIndex(u => u.id === id);
-  if (index === -1) return null;
-
-  users[index] = { ...users[index], ...data };
-  await writeUsers(users);
-  return users[index];
-}
-
-async function deleteUser(id) {
-  const users = await readUsers();
-  const filtered = users.filter(u => u.id !== id);
-  await writeUsers(filtered);
-}
+    const users = await readUsers();
+    const index = users.findIndex(u => u.id === id);
+    if (index === -1) return null;
+  
+    const { id: _, ...safeData } = data;
+  
+    users[index] = {
+      ...users[index],
+      ...safeData
+    };
+  
+    await writeUsers(users);
+    return users[index];
+  }
+  
+  async function deleteUser(id) {
+    const users = await readUsers();
+    const updated = users.filter(u => u.id !== id);
+  
+    if (updated.length === users.length) return false;
+  
+    await writeUsers(updated);
+    return true;
+  }
 
 module.exports = {
   getAllUsers,
