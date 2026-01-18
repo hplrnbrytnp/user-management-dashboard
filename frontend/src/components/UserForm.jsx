@@ -62,9 +62,9 @@ export default function UserForm({ initialData, onSubmit, onCancel }) {
   };  
 
   return (
-    <form onSubmit={submit}>
+    <form onSubmit={submit} className="space-y-4">
       <input
-        className="w-full border rounded px-3 py-2 focus:outline-none focus:ring focus:ring-blue-200"
+        className={`w-full border rounded px-3 py-2 focus:outline-none focus:ring ${errors.name ? 'border-red-500 focus:ring-red-200' : 'focus:ring-blue-200'}`}
         value={form.name}
         onChange={e => setForm({ ...form, name: e.target.value })}
         placeholder="Name"
@@ -72,7 +72,7 @@ export default function UserForm({ initialData, onSubmit, onCancel }) {
       {errors.name && <p className="text-sm text-red-600 mt-1">{errors.name}</p>}
 
       <input
-        className="w-full border rounded px-3 py-2 focus:outline-none focus:ring focus:ring-blue-200"
+        className={`w-full border rounded px-3 py-2 focus:outline-none focus:ring ${errors.username ? 'border-red-500 focus:ring-red-200' : 'focus:ring-blue-200'}`}
         value={form.username}
         onChange={e => setForm({ ...form, username: e.target.value })}
         placeholder="Username"
@@ -80,7 +80,7 @@ export default function UserForm({ initialData, onSubmit, onCancel }) {
       {errors.username && <p className="text-sm text-red-600 mt-1">{errors.username}</p>}
 
       <input
-        className="w-full border rounded px-3 py-2 focus:outline-none focus:ring focus:ring-blue-200"
+        className={`w-full border rounded px-3 py-2 focus:outline-none focus:ring ${errors.email ? 'border-red-500 focus:ring-red-200' : 'focus:ring-blue-200'}`}
         value={form.email}
         onChange={e => setForm({ ...form, email: e.target.value })}
         placeholder="Email"

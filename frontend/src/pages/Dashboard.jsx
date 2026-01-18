@@ -9,6 +9,8 @@ export default function Dashboard() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
   const [deletingId, setDeletingId] = useState(null);
+  const [currentPage, setCurrentPage] = useState(1);
+  const USERS_PER_PAGE = 5;
 
   useEffect(() => {
     const load = async () => {
@@ -48,6 +50,11 @@ export default function Dashboard() {
     } finally {
       setDeletingId(null);
     }
+  };
+
+  const handleSearch = (e) => {
+    setSearch(e.target.value);
+    setCurrentPage(1);
   };  
 
   const filteredUsers = users.filter(user => {
@@ -59,12 +66,20 @@ export default function Dashboard() {
     );
   });
 
+  const totalPages = Math.ceil(filteredUsers.length / USERS_PER_PAGE);
+
+  const startIndex = (currentPage - 1) * USERS_PER_PAGE;
+  const paginatedUsers = filteredUsers.slice(
+    startIndex,
+    startIndex + USERS_PER_PAGE
+  );
+
   if (loading) return <p className="text-center text-gray-600">Loading users...</p>;
   if (error) return <p className="text-center text-red-600">{error}</p>;
 
   return (
     <div className="min-h-screen bg-gray-100 p-6">
-      <div className="max-w-3xl mx-auto bg-white rounded shadow p-6">   
+      <div className="max-w-3xl mx-auto bg-white rounded shadow p-6 space-y-4">   
         <UserForm
           initialData={editingUser}
           onSubmit={editingUser ? handleUpdate : handleCreate}
@@ -75,11 +90,11 @@ export default function Dashboard() {
           className="w-full border rounded px-3 py-2 mb-4"
           placeholder="Search users..."
           value={search}
-          onChange={e => setSearch(e.target.value)}
+          onChange={handleSearch}
         />
 
         <ul>
-          {filteredUsers.map(u => (
+          {paginatedUsers.map(u => (
             <li key={u.id} className="py-3 flex justify-between items-center">
               <div>
                 <p className="font-medium">{u.name}</p>
@@ -98,6 +113,27 @@ export default function Dashboard() {
         </ul>
 
         {filteredUsers.length === 0 && <p>No users found</p>}
+        <div className="flex justify-center mt-4 space-x-2 items-center">
+          <button
+            className="ml-2 bg-gray-300 px-4 py-2 rounded hover:bg-gray-400 disabled:opacity-50"
+            onClick={() => setCurrentPage(p => Math.max(p - 1, 1))}
+            disabled={currentPage === 1}
+          >
+            Previous
+          </button>
+
+          <span>
+            Page {currentPage} of {totalPages}
+          </span>
+
+          <button
+            className="ml-2 bg-gray-300 px-4 py-2 rounded hover:bg-gray-400 disabled:opacity-50"
+            onClick={() => setCurrentPage(p => Math.min(p + 1, totalPages))}
+            disabled={currentPage === totalPages}
+          >
+            Next
+          </button>
+        </div>
       </div>
     </div>
   );
