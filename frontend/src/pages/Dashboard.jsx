@@ -5,6 +5,7 @@ import UserForm from '../components/UserForm';
 export default function Dashboard() {
   const [users, setUsers] = useState([]);
   const [editingUser, setEditingUser] = useState(null);
+  const [search, setSearch] = useState('');
 
   useEffect(() => {
     getUsers().then(setUsers);
@@ -26,6 +27,15 @@ export default function Dashboard() {
     setUsers(users.filter(u => u.id !== id));
   };
 
+  const filteredUsers = users.filter(user => {
+    const q = search.toLowerCase();
+    return (
+      user.name.toLowerCase().includes(q) ||
+      user.username.toLowerCase().includes(q) ||
+      user.email.toLowerCase().includes(q)
+    );
+  });
+
   return (
     <>
       <UserForm
@@ -34,8 +44,14 @@ export default function Dashboard() {
         onCancel={() => setEditingUser(null)}
       />
 
+      <input
+        placeholder="Search users..."
+        value={search}
+        onChange={e => setSearch(e.target.value)}
+      />
+
       <ul>
-        {users.map(u => (
+        {filteredUsers.map(u => (
           <li key={u.id}>
             {u.name} ({u.username})
             <button onClick={() => setEditingUser(u)}>Edit</button>
@@ -43,6 +59,8 @@ export default function Dashboard() {
           </li>
         ))}
       </ul>
+
+      {filteredUsers.length === 0 && <p>No users found</p>}
     </>
   );
 }
