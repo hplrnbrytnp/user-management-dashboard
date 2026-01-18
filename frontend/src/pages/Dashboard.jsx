@@ -6,10 +6,26 @@ export default function Dashboard() {
   const [users, setUsers] = useState([]);
   const [editingUser, setEditingUser] = useState(null);
   const [search, setSearch] = useState('');
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState(null);
+  const [deletingId, setDeletingId] = useState(null);
 
   useEffect(() => {
-    getUsers().then(setUsers);
-  }, []);
+    const load = async () => {
+      try {
+        setLoading(true);
+        const data = await getUsers();
+        setUsers(data);
+        setError(null);
+      } catch {
+        setError('Failed to load users');
+      } finally {
+        setLoading(false);
+      }
+    };
+  
+    load();
+  }, []);  
 
   const handleCreate = async (data) => {
     const user = await createUser(data);
@@ -23,9 +39,16 @@ export default function Dashboard() {
   };
 
   const handleDelete = async (id) => {
-    await deleteUser(id);
-    setUsers(users.filter(u => u.id !== id));
-  };
+    try {
+      setDeletingId(id);
+      await deleteUser(id);
+      setUsers(users.filter(u => u.id !== id));
+    } catch {
+      alert('Failed to delete user');
+    } finally {
+      setDeletingId(null);
+    }
+  };  
 
   const filteredUsers = users.filter(user => {
     const q = search.toLowerCase();
@@ -35,6 +58,9 @@ export default function Dashboard() {
       user.email.toLowerCase().includes(q)
     );
   });
+
+  if (loading) return <p>Loading users...</p>;
+  if (error) return <p>{error}</p>;
 
   return (
     <>
@@ -55,7 +81,12 @@ export default function Dashboard() {
           <li key={u.id}>
             {u.name} ({u.username})
             <button onClick={() => setEditingUser(u)}>Edit</button>
-            <button onClick={() => handleDelete(u.id)}>Delete</button>
+            <button
+              onClick={() => handleDelete(u.id)}
+              disabled={deletingId === u.id}
+            >
+              {deletingId === u.id ? 'Deleting...' : 'Delete'}
+            </button>
           </li>
         ))}
       </ul>

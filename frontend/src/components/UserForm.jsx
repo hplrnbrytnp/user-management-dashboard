@@ -9,6 +9,9 @@ const emptyForm = {
 export default function UserForm({ initialData, onSubmit, onCancel }) {
   const [form, setForm] = useState(emptyForm);
   const [errors, setErrors] = useState({});
+  const [submitting, setSubmitting] = useState(false);
+  const [submitError, setSubmitError] = useState(null);
+
 
   useEffect(() => {
     if (initialData) {
@@ -41,13 +44,22 @@ export default function UserForm({ initialData, onSubmit, onCancel }) {
 
   const submit = async (e) => {
     e.preventDefault();
+  
     if (!validate()) return;
-
-    await onSubmit(form);
-
-    if (!initialData) setForm(emptyForm);
-    setErrors({});
-  };
+  
+    try {
+      setSubmitting(true);
+      await onSubmit(form);
+      setSubmitError(null);
+  
+      if (!initialData) setForm(emptyForm);
+      setErrors({});
+    } catch {
+      setSubmitError('Ohh no! Something went wrong. Please try again.');
+    } finally {
+      setSubmitting(false);
+    }
+  };  
 
   return (
     <form onSubmit={submit}>
@@ -72,10 +84,13 @@ export default function UserForm({ initialData, onSubmit, onCancel }) {
       />
       {errors.email && <p>{errors.email}</p>}
 
-      <button type="submit">
-        {initialData ? 'Update User' : 'Create User'}
+      <button type="submit" disabled={submitting}>
+        {submitting
+          ? initialData ? 'Updating...' : 'Creating...'
+          : initialData ? 'Update User' : 'Create User'}
       </button>
 
+      {submitError && <p style={{ color: 'red' }}>{submitError}</p>}
       {initialData && (
         <button type="button" onClick={onCancel}>
           Cancel
