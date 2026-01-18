@@ -64,35 +64,38 @@ export default function UserForm({ initialData, onSubmit, onCancel }) {
   return (
     <form onSubmit={submit}>
       <input
+        className="w-full border rounded px-3 py-2 focus:outline-none focus:ring focus:ring-blue-200"
         value={form.name}
         onChange={e => setForm({ ...form, name: e.target.value })}
         placeholder="Name"
       />
-      {errors.name && <p>{errors.name}</p>}
+      {errors.name && <p className="text-sm text-red-600 mt-1">{errors.name}</p>}
 
       <input
+        className="w-full border rounded px-3 py-2 focus:outline-none focus:ring focus:ring-blue-200"
         value={form.username}
         onChange={e => setForm({ ...form, username: e.target.value })}
         placeholder="Username"
       />
-      {errors.username && <p>{errors.username}</p>}
+      {errors.username && <p className="text-sm text-red-600 mt-1">{errors.username}</p>}
 
       <input
+        className="w-full border rounded px-3 py-2 focus:outline-none focus:ring focus:ring-blue-200"
         value={form.email}
         onChange={e => setForm({ ...form, email: e.target.value })}
         placeholder="Email"
       />
-      {errors.email && <p>{errors.email}</p>}
+      {errors.email && <p className="text-sm text-red-600 mt-1">{errors.email}</p>}
 
-      <button type="submit" disabled={submitting}>
+      <button type="submit" disabled={submitting} className="bg-blue-600 text-white px-4 py-2 rounded hover:bg-blue-700 disabled:opacity-50">
         {submitting
           ? initialData ? 'Updating...' : 'Creating...'
           : initialData ? 'Update User' : 'Create User'}
       </button>
 
-      {submitError && <p style={{ color: 'red' }}>{submitError}</p>}
+      {submitError && <p className="text-sm text-red-600 mt-1">{submitError}</p>}
       {initialData && (
-        <button type="button" onClick={onCancel}>
+        <button type="button" onClick={onCancel} className="ml-2 bg-gray-300 px-4 py-2 rounded hover:bg-gray-400">
           Cancel
         </button>
       )}
