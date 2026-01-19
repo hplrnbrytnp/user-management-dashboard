@@ -1,4 +1,5 @@
 import { useEffect, useState } from 'react';
+import DOMPurify from 'dompurify';
 
 const emptyForm = {
   name: '',
@@ -6,7 +7,7 @@ const emptyForm = {
   email: ''
 };
 
-export default function UserForm({ initialData, onSubmit, onCancel }) {
+export default function UserForm({ initialData, onSubmit, onCancel, users }) {
   const [form, setForm] = useState(emptyForm);
   const [errors, setErrors] = useState({});
   const [submitting, setSubmitting] = useState(false);
@@ -23,6 +24,7 @@ export default function UserForm({ initialData, onSubmit, onCancel }) {
     } else {
       setForm(emptyForm);
     }
+    
     setErrors({});
   }, [initialData]);
 
@@ -38,6 +40,15 @@ export default function UserForm({ initialData, onSubmit, onCancel }) {
       newErrors.email = 'Email is invalid';
     }
 
+    const emailExists = users.some(u =>
+      u.email === form.email &&
+      (!initialData || u.id !== initialData.id)
+    );
+  
+    if (emailExists) {
+      newErrors.email = 'Email is already in use';
+    }
+
     setErrors(newErrors);
     return Object.keys(newErrors).length === 0;
   };
@@ -49,7 +60,13 @@ export default function UserForm({ initialData, onSubmit, onCancel }) {
   
     try {
       setSubmitting(true);
-      await onSubmit(form);
+      const cleanForm = {
+        name: DOMPurify.sanitize(form.name, { ALLOWED_TAGS: [] }),
+        username: DOMPurify.sanitize(form.username, { ALLOWED_TAGS: [] }),
+        email: DOMPurify.sanitize(form.email, { ALLOWED_TAGS: [] }),
+      };      
+      
+      await onSubmit(cleanForm);      
       setSubmitError(null);
   
       if (!initialData) setForm(emptyForm);
@@ -59,7 +76,7 @@ export default function UserForm({ initialData, onSubmit, onCancel }) {
     } finally {
       setSubmitting(false);
     }
-  };  
+  }; 
 
   return (
     <form onSubmit={submit} className="space-y-4">
