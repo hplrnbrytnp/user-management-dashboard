@@ -181,7 +181,8 @@ export default function Dashboard() {
   const [error, setError] = useState(null);
   const [deletingId, setDeletingId] = useState(null);
   const [currentPage, setCurrentPage] = useState(1);
-  const USERS_PER_PAGE = 5;
+  const [usersPerPage, setUsersPerPage] = useState(5);
+  const PAGE_SIZE_OPTIONS = [5, 10, 20];
 
   // Debounce the search input
   const debouncedSearch = useDebounce(search, SEARCH_DELAY);
@@ -251,9 +252,15 @@ export default function Dashboard() {
     );
   }, [users, debouncedSearch, isSearchActive]);
 
-  const totalPages = Math.ceil(filteredUsers.length / USERS_PER_PAGE);
-  const startIndex = (currentPage - 1) * USERS_PER_PAGE;
-  const paginatedUsers = filteredUsers.slice(startIndex, startIndex + USERS_PER_PAGE);
+  const totalPages = Math.ceil(filteredUsers.length / usersPerPage);
+  const startIndex = (currentPage - 1) * usersPerPage;
+  const paginatedUsers = filteredUsers.slice(startIndex, startIndex + usersPerPage);
+
+  // Handle page size change
+  const handlePageSizeChange = (e) => {
+    setUsersPerPage(Number(e.target.value));
+    setCurrentPage(1);
+  };
 
   // Get search status message
   const getSearchStatus = () => {
@@ -421,53 +428,77 @@ export default function Dashboard() {
             )}
 
             {/* Pagination */}
-            {totalPages > 1 && (
-              <div className={`flex items-center justify-center gap-2 mt-8 pt-6 border-t ${isDark ? 'border-dark-600' : 'border-gray-100'}`}>
-                <button
-                  onClick={() => setCurrentPage(p => Math.max(p - 1, 1))}
-                  disabled={currentPage === 1}
-                  className={`p-2.5 rounded-xl transition-all disabled:opacity-40 disabled:cursor-not-allowed ${
-                    isDark 
-                      ? 'bg-dark-700 text-dark-500 hover:text-white hover:bg-teal' 
-                      : 'bg-periwinkle text-gray-500 hover:text-white hover:bg-teal'
-                  }`}
-                >
-                  <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
-                  </svg>
-                </button>
-                
-                <div className="flex items-center gap-1">
-                  {[...Array(totalPages)].map((_, i) => (
-                    <button
-                      key={i}
-                      onClick={() => setCurrentPage(i + 1)}
-                      className={`w-10 h-10 rounded-xl font-medium transition-all ${
-                        currentPage === i + 1
-                          ? 'bg-teal text-white'
-                          : isDark 
-                            ? 'bg-dark-700 text-dark-500 hover:text-white hover:bg-teal'
-                            : 'bg-periwinkle text-gray-500 hover:text-white hover:bg-teal'
-                      }`}
-                    >
-                      {i + 1}
-                    </button>
-                  ))}
+            {filteredUsers.length > 0 && (
+              <div className={`flex items-center justify-between mt-8 pt-6 border-t ${isDark ? 'border-dark-600' : 'border-gray-100'}`}>
+                {/* Page size selector */}
+                <div className="flex items-center gap-2">
+                  <span className={`text-sm ${isDark ? 'text-dark-500' : 'text-gray-500'}`}>Show</span>
+                  <select
+                    value={usersPerPage}
+                    onChange={handlePageSizeChange}
+                    className={`rounded-xl px-3 py-2 text-sm font-medium focus:outline-none focus:ring-2 focus:ring-teal/50 transition-all cursor-pointer ${
+                      isDark 
+                        ? 'bg-dark-700 border border-dark-500 text-white focus:border-teal' 
+                        : 'bg-periwinkle border border-transparent text-gray-700 focus:border-teal'
+                    }`}
+                  >
+                    {PAGE_SIZE_OPTIONS.map(size => (
+                      <option key={size} value={size}>{size}</option>
+                    ))}
+                  </select>
+                  <span className={`text-sm ${isDark ? 'text-dark-500' : 'text-gray-500'}`}>per page</span>
                 </div>
 
-                <button
-                  onClick={() => setCurrentPage(p => Math.min(p + 1, totalPages))}
-                  disabled={currentPage === totalPages}
-                  className={`p-2.5 rounded-xl transition-all disabled:opacity-40 disabled:cursor-not-allowed ${
-                    isDark 
-                      ? 'bg-dark-700 text-dark-500 hover:text-white hover:bg-teal' 
-                      : 'bg-periwinkle text-gray-500 hover:text-white hover:bg-teal'
-                  }`}
-                >
-                  <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
-                  </svg>
-                </button>
+                {/* Page navigation */}
+                {totalPages > 1 && (
+                  <div className="flex items-center gap-2">
+                    <button
+                      onClick={() => setCurrentPage(p => Math.max(p - 1, 1))}
+                      disabled={currentPage === 1}
+                      className={`p-2.5 rounded-xl transition-all disabled:opacity-40 disabled:cursor-not-allowed ${
+                        isDark 
+                          ? 'bg-dark-700 text-dark-500 hover:text-white hover:bg-teal' 
+                          : 'bg-periwinkle text-gray-500 hover:text-white hover:bg-teal'
+                      }`}
+                    >
+                      <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
+                      </svg>
+                    </button>
+                    
+                    <div className="flex items-center gap-1">
+                      {[...Array(totalPages)].map((_, i) => (
+                        <button
+                          key={i}
+                          onClick={() => setCurrentPage(i + 1)}
+                          className={`w-10 h-10 rounded-xl font-medium transition-all ${
+                            currentPage === i + 1
+                              ? 'bg-teal text-white'
+                              : isDark 
+                                ? 'bg-dark-700 text-dark-500 hover:text-white hover:bg-teal'
+                                : 'bg-periwinkle text-gray-500 hover:text-white hover:bg-teal'
+                          }`}
+                        >
+                          {i + 1}
+                        </button>
+                      ))}
+                    </div>
+
+                    <button
+                      onClick={() => setCurrentPage(p => Math.min(p + 1, totalPages))}
+                      disabled={currentPage === totalPages}
+                      className={`p-2.5 rounded-xl transition-all disabled:opacity-40 disabled:cursor-not-allowed ${
+                        isDark 
+                          ? 'bg-dark-700 text-dark-500 hover:text-white hover:bg-teal' 
+                          : 'bg-periwinkle text-gray-500 hover:text-white hover:bg-teal'
+                      }`}
+                    >
+                      <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
+                      </svg>
+                    </button>
+                  </div>
+                )}
               </div>
             )}
           </div>
