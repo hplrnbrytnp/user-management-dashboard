@@ -1,5 +1,5 @@
 const { readUsers, writeUsers } = require('../utils/fileHandler');
-const crypto = require('crypto');
+const { v4: uuidv4 } = require('uuid');
 
 async function getAllUsers() {
   return await readUsers();
@@ -14,7 +14,7 @@ async function createUser(data) {
   const users = await readUsers();
 
   const newUser = {
-    id: crypto.randomUUID(),
+    id: uuidv4(),
     name: data.name,
     username: data.username,
     email: data.email
