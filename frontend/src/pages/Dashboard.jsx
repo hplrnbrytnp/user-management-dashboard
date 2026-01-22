@@ -1,8 +1,23 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useState, useMemo, useCallback } from 'react';
 import { getUsers, createUser, updateUser, deleteUser } from '../services/users.api';
 import UserForm from '../components/UserForm';
 import Modal from '../components/Modal';
 import { useTheme } from '../context/ThemeContext';
+
+// For debouncing
+function useDebounce(value, delay) {
+  const [debouncedValue, setDebouncedValue] = useState(value);
+
+  useEffect(() => {
+    const timer = setTimeout(() => {
+      setDebouncedValue(value);
+    }, delay);
+
+    return () => clearTimeout(timer);
+  }, [value, delay]);
+
+  return debouncedValue;
+}
 
 // Floating particles component
 const Particles = () => (
@@ -47,7 +62,7 @@ const ThemeToggle = () => {
 };
 
 // Stats card component
-const StatCard = ({ icon, label, value }) => {
+const StatCard = ({ icon, label, value, subtext }) => {
   const { isDark } = useTheme();
   
   return (
@@ -62,7 +77,11 @@ const StatCard = ({ icon, label, value }) => {
         </div>
         <div>
           <p className={`text-sm font-medium ${isDark ? 'text-dark-500' : 'text-gray-400'}`}>{label}</p>
-          <p className={`text-2xl font-display font-bold ${isDark ? 'text-white' : 'text-teal'}`}>{value}</p>
+          {subtext ? (
+            <p className={`text-sm font-medium ${isDark ? 'text-dark-500' : 'text-gray-400'}`}>{subtext}</p>
+          ) : (
+            <p className={`text-2xl font-display font-bold ${isDark ? 'text-white' : 'text-teal'}`}>{value}</p>
+          )}
         </div>
       </div>
     </div>
@@ -149,6 +168,9 @@ const UserRow = ({ user, index, onEdit, onDelete, isDeleting }) => {
   );
 };
 
+const MIN_SEARCH_LENGTH = 3;
+const SEARCH_DELAY = 400; // milliseconds
+
 export default function Dashboard() {
   const { isDark } = useTheme();
   const [users, setUsers] = useState([]);
@@ -160,6 +182,12 @@ export default function Dashboard() {
   const [deletingId, setDeletingId] = useState(null);
   const [currentPage, setCurrentPage] = useState(1);
   const USERS_PER_PAGE = 5;
+
+  // Debounce the search input
+  const debouncedSearch = useDebounce(search, SEARCH_DELAY);
+
+  // Check if search is active (has minimum characters)
+  const isSearchActive = debouncedSearch.trim().length >= MIN_SEARCH_LENGTH;
 
   useEffect(() => {
     const load = async () => {
@@ -177,6 +205,11 @@ export default function Dashboard() {
   
     load();
   }, []);  
+
+  // Reset page when search changes
+  useEffect(() => {
+    setCurrentPage(1);
+  }, [debouncedSearch]);
 
   const handleCreate = async (data) => {
     const user = await createUser(data);
@@ -201,23 +234,40 @@ export default function Dashboard() {
     }
   };
 
-  const handleSearch = (e) => {
+  const handleSearch = useCallback((e) => {
     setSearch(e.target.value);
-    setCurrentPage(1);
-  };  
+  }, []);
 
-  const filteredUsers = users.filter(user => {
-    const q = search.toLowerCase();
-    return (
+  // Filter users based on debounced search (only if >= MIN_SEARCH_LENGTH chars)
+  const filteredUsers = useMemo(() => {
+    if (!isSearchActive) {
+      return users;
+    }
+    const q = debouncedSearch.toLowerCase().trim();
+    return users.filter(user => 
       user?.name?.toLowerCase().includes(q) ||
       user?.username?.toLowerCase().includes(q) ||
       user?.email?.toLowerCase().includes(q)
     );
-  });
+  }, [users, debouncedSearch, isSearchActive]);
 
   const totalPages = Math.ceil(filteredUsers.length / USERS_PER_PAGE);
   const startIndex = (currentPage - 1) * USERS_PER_PAGE;
   const paginatedUsers = filteredUsers.slice(startIndex, startIndex + USERS_PER_PAGE);
+
+  // Get search status message
+  const getSearchStatus = () => {
+    const trimmedSearch = search.trim();
+    if (trimmedSearch.length === 0) {
+      return { subtext: 'No search input' };
+    }
+    if (trimmedSearch.length < MIN_SEARCH_LENGTH) {
+      return { subtext: `Type ${MIN_SEARCH_LENGTH - trimmedSearch.length} more...` };
+    }
+    return { value: filteredUsers.length };
+  };
+
+  const searchStatus = getSearchStatus();
 
   // Loading state
   if (loading) {
@@ -298,7 +348,8 @@ export default function Dashboard() {
                 </svg>
               }
               label="Search Results"
-              value={filteredUsers.length}
+              value={searchStatus.value}
+              subtext={searchStatus.subtext}
             />
           </div>
 
@@ -320,7 +371,7 @@ export default function Dashboard() {
                       ? 'bg-dark-700 border border-dark-500 text-white placeholder-dark-500 focus:border-teal' 
                       : 'bg-periwinkle border border-transparent text-gray-800 placeholder-gray-400 focus:border-teal'
                   }`}
-                  placeholder="Search by name, username, or email..."
+                  placeholder="Search (min. 3 characters)..."
                   value={search}
                   onChange={handleSearch}
                 />
