@@ -213,6 +213,19 @@ export default function Dashboard() {
     setCurrentPage(1);
   }, [debouncedSearch]);
 
+  // Reusable filter function
+  const filterUsers = useCallback((userList) => {
+    if (!isSearchActive) {
+      return userList;
+    }
+    const q = debouncedSearch.toLowerCase().trim();
+    return userList.filter(user =>
+      user?.name?.toLowerCase().includes(q) ||
+      user?.username?.toLowerCase().includes(q) ||
+      user?.email?.toLowerCase().includes(q)
+    );
+  }, [debouncedSearch, isSearchActive]);
+
   const handleCreate = async (data) => {
     const user = await createUser(data);
     setUsers([...users, user]);
@@ -230,11 +243,26 @@ export default function Dashboard() {
 
   const handleDeleteConfirm = async () => {
     if (!userToDelete) return;
-    
+
     try {
       setDeletingId(userToDelete.id);
       await deleteUser(userToDelete.id);
-      setUsers(users.filter(u => u.id !== userToDelete.id));
+      const updatedUsers = users.filter(u => u.id !== userToDelete.id);
+      setUsers(updatedUsers);
+
+      // Update pagination after deletion
+      // Calculate how many users will be in the filtered list after deletion
+      const updatedFilteredUsers = filterUsers(updatedUsers);
+      const newTotalPages = Math.ceil(updatedFilteredUsers.length / usersPerPage);
+
+      // If current page is now beyond total pages, go to the last page
+      if (currentPage > newTotalPages && newTotalPages > 0) {
+        setCurrentPage(newTotalPages);
+      } else if (newTotalPages === 0) {
+        // If no users left, reset to page 1
+        setCurrentPage(1);
+      }
+
       setUserToDelete(null);
     } catch {
       alert('Failed to delete user');
@@ -252,17 +280,7 @@ export default function Dashboard() {
   }, []);
 
   // Filter users based on debounced search (only if >= MIN_SEARCH_LENGTH chars)
-  const filteredUsers = useMemo(() => {
-    if (!isSearchActive) {
-      return users;
-    }
-    const q = debouncedSearch.toLowerCase().trim();
-    return users.filter(user => 
-      user?.name?.toLowerCase().includes(q) ||
-      user?.username?.toLowerCase().includes(q) ||
-      user?.email?.toLowerCase().includes(q)
-    );
-  }, [users, debouncedSearch, isSearchActive]);
+  const filteredUsers = useMemo(() => filterUsers(users), [users, filterUsers]);
 
   const totalPages = Math.ceil(filteredUsers.length / usersPerPage);
   const startIndex = (currentPage - 1) * usersPerPage;
